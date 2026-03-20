@@ -62,7 +62,15 @@
         <section class="card all-tasks-card">
           <div class="section-header">
             <h2>할 일 전체 보기</h2>
-            <span id="calendar-month-label" class="month-label"></span>
+            <div class="month-nav">
+              <button id="prev-month-button" class="secondary-button month-nav-button" type="button">
+                이전달
+              </button>
+              <span id="calendar-month-label" class="month-label"></span>
+              <button id="next-month-button" class="secondary-button month-nav-button" type="button">
+                다음달
+              </button>
+            </div>
           </div>
           <div id="all-tasks-container" class="task-list">
             <!-- 선택한 달의 전체 할 일이 목록으로 렌더링됩니다. -->

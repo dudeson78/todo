@@ -306,6 +306,17 @@ body {
   color: var(--text-muted);
 }
 
+.month-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.month-nav-button {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+}
+
 .task-card {
   border-radius: var(--radius-md);
   padding: 10px 11px 9px;

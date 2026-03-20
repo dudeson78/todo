@@ -1,6 +1,4 @@
 (() => {
-  const STORAGE_KEY = 'todo-app-tasks-v1';
-
   /** @type {{ id: string; title: string; detail: string; date: string; completed?: boolean }[]} */
   let tasks = [];
   let selectedDate = null;
@@ -13,6 +11,8 @@
   const allTasksContainer = document.getElementById('all-tasks-container');
   const calendarContainer = document.getElementById('calendar-container');
   const calendarMonthLabel = document.getElementById('calendar-month-label');
+  const prevMonthButton = document.getElementById('prev-month-button');
+  const nextMonthButton = document.getElementById('next-month-button');
   const listViewButton = document.getElementById('list-view-button');
   const calendarViewButton = document.getElementById('calendar-view-button');
 
@@ -49,27 +49,31 @@
     return `${year}년 ${month}월 ${day}일`;
   }
 
-  function loadTasks() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.map((t) => ({
-        ...t,
-        completed: t.completed === true,
-      }));
-    } catch {
-      return [];
+  function shiftSelectedMonth(delta) {
+    const base = selectedDate || getTodayDateString();
+    const [year, month] = base.split('-').map(Number);
+    if (!year || !month) return;
+
+    const target = new Date(year, month - 1, 1);
+    target.setMonth(target.getMonth() + delta);
+
+    const nextDate = `${target.getFullYear().toString().padStart(4, '0')}-${(target.getMonth() + 1)
+      .toString()
+      .padStart(2, '0')}-01`;
+
+    selectedDate = nextDate;
+    if (filterDateInput) {
+      filterDateInput.value = selectedDate;
     }
+    render();
+  }
+
+  function loadTasks() {
+    return [];
   }
 
   function saveTasks() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    } catch {
-      // ignore
-    }
+    // 로컬 저장소를 사용하지 않음
   }
 
   function openModal() {
@@ -526,6 +530,18 @@
         calendarViewButton.classList.add('is-active');
         listViewButton.classList.remove('is-active');
         render();
+      });
+    }
+
+    if (prevMonthButton) {
+      prevMonthButton.addEventListener('click', () => {
+        shiftSelectedMonth(-1);
+      });
+    }
+
+    if (nextMonthButton) {
+      nextMonthButton.addEventListener('click', () => {
+        shiftSelectedMonth(1);
       });
     }
 
