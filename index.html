@@ -36,23 +36,6 @@
           </div>
         </section>
 
-        <section class="view-toggle">
-          <button
-            id="list-view-button"
-            class="secondary-button view-toggle-button is-active"
-            type="button"
-          >
-            목록으로 보기
-          </button>
-          <button
-            id="calendar-view-button"
-            class="secondary-button view-toggle-button"
-            type="button"
-          >
-            달력으로 보기
-          </button>
-        </section>
-
         <section class="toolbar">
           <button id="open-modal-button" class="primary-button">
             + 새 할 일 추가
@@ -72,9 +55,7 @@
               </button>
             </div>
           </div>
-          <div id="all-tasks-container" class="task-list">
-            <!-- 선택한 달의 전체 할 일이 목록으로 렌더링됩니다. -->
-          </div>
+          <div id="all-tasks-container" class="task-list" hidden></div>
           <div id="calendar-container" class="calendar-container" hidden>
             <!-- 달력 형태로 할 일이 렌더링됩니다. -->
           </div>

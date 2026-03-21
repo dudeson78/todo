@@ -17,7 +17,6 @@
   /** @type {{ id: string; title: string; detail: string; date: string; time: number; completed?: boolean }[]} */
   let tasks = [];
   let selectedDate = null;
-  let viewMode = 'list'; // 'list' | 'calendar'
   /** @type {{ id: string; title: string; detail: string; date: string; time: number; completed?: boolean } | null} */
   let currentDetailTask = null;
 
@@ -28,8 +27,6 @@
   const calendarMonthLabel = document.getElementById('calendar-month-label');
   const prevMonthButton = document.getElementById('prev-month-button');
   const nextMonthButton = document.getElementById('next-month-button');
-  const listViewButton = document.getElementById('list-view-button');
-  const calendarViewButton = document.getElementById('calendar-view-button');
 
   const openModalButton = document.getElementById('open-modal-button');
   const modalOverlay = document.getElementById('task-modal-overlay');
@@ -283,7 +280,6 @@
     const todayStr = getTodayDateString();
     const currentDate = selectedDate || todayStr;
 
-    // 상단 날짜 pill 텍스트
     if (todayLabelEl) {
       const label = formatKoreanDate(currentDate);
       todayLabelEl.textContent = currentDate === todayStr ? `${label} (오늘)` : label;
@@ -293,21 +289,6 @@
     allTasksContainer.innerHTML = '';
     if (calendarContainer) calendarContainer.innerHTML = '';
 
-    if (!tasks.length) {
-      const emptyToday = document.createElement('div');
-      emptyToday.className = 'empty-state';
-      emptyToday.innerHTML =
-        '<span><strong>선택한 날짜</strong>에 할 일이 아직 없습니다.</span>';
-      todayTasksContainer.appendChild(emptyToday);
-
-      const emptyAll = document.createElement('div');
-      emptyAll.className = 'empty-state';
-      emptyAll.innerHTML =
-        '<span>아래 버튼을 눌러 <strong>첫 할 일</strong>을 추가해 보세요.</span>';
-      allTasksContainer.appendChild(emptyAll);
-      return;
-    }
-
     const sorted = [...tasks].sort((a, b) => {
       if (a.date !== b.date) return a.date.localeCompare(b.date);
       const aTime = a.time ?? 0;
@@ -316,69 +297,22 @@
       return a.id.localeCompare(b.id);
     });
 
+    // 오늘의 할 일 (선택 날짜 기준)
     const dailyTasks = sorted.filter((t) => t.date === currentDate);
 
     if (!dailyTasks.length) {
       const emptyToday = document.createElement('div');
       emptyToday.className = 'empty-state';
-      emptyToday.innerHTML =
-        '<span>선택한 날짜에 등록된 할 일이 없습니다.</span>';
+      emptyToday.innerHTML = '<span>선택한 날짜에 등록된 할 일이 없습니다.</span>';
       todayTasksContainer.appendChild(emptyToday);
-
-      const emptyAll = document.createElement('div');
-      emptyAll.className = 'empty-state';
-      emptyAll.innerHTML =
-        '<span>다른 날짜를 선택하거나 새 할 일을 추가해 보세요.</span>';
-      allTasksContainer.appendChild(emptyAll);
-      if (calendarContainer) {
-        calendarContainer.hidden = viewMode !== 'calendar';
-      }
-      return;
+    } else {
+      dailyTasks.forEach((task) => {
+        const isToday = task.date === todayStr;
+        todayTasksContainer.appendChild(createTaskCard(task, isToday));
+      });
     }
 
-    // 상단(오늘의 할 일) 영역은 항상 선택한 날짜 기준 목록으로 표시
-    dailyTasks.forEach((task) => {
-      const isToday = task.date === todayStr;
-      const topCard = createTaskCard(task, isToday);
-      todayTasksContainer.appendChild(topCard);
-    });
-
-    if (viewMode === 'list') {
-      // 목록 보기: 선택한 달의 모든 할 일을 리스트로 출력
-      const [year, month] = currentDate.split('-').map(Number);
-      const monthPrefix =
-        `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-`;
-
-      const monthlyTasks = sorted.filter((t) => t.date.startsWith(monthPrefix));
-
-      if (!monthlyTasks.length) {
-        const emptyAll = document.createElement('div');
-        emptyAll.className = 'empty-state';
-        emptyAll.innerHTML =
-          '<span>이 달에는 등록된 할 일이 없습니다.</span>';
-        allTasksContainer.appendChild(emptyAll);
-      } else {
-        monthlyTasks.forEach((task) => {
-          const isToday = task.date === todayStr;
-          const listCard = createTaskCard(task, isToday);
-          allTasksContainer.appendChild(listCard);
-        });
-      }
-
-      allTasksContainer.hidden = false;
-      if (calendarContainer) calendarContainer.hidden = true;
-      if (calendarMonthLabel && viewMode === 'list') {
-        if (tasks.length) {
-          const [y, m] = currentDate.split('-').map(Number);
-          if (y && m) {
-            calendarMonthLabel.textContent = `${y}년 ${m}월`;
-          }
-        }
-      }
-      return;
-    }
-
-    // 달력 보기
+    // 달력은 월 이동과 무관하게 항상 렌더링
     allTasksContainer.hidden = true;
     if (!calendarContainer) return;
     calendarContainer.hidden = false;
@@ -445,7 +379,10 @@
         item.type = 'button';
         item.className =
           'calendar-task' + (task.completed ? ' completed' : '');
-        item.textContent = task.title;
+        const timeLabel = task.time !== null && task.time !== undefined
+          ? `(${String(Number(task.time)).padStart(2, '0')}) `
+          : '';
+        item.textContent = `${timeLabel}${task.title}`;
         item.dataset.id = task.id;
         tasksList.appendChild(item);
       });
@@ -572,22 +509,6 @@
     }
     if (calendarContainer) {
       calendarContainer.addEventListener('click', handleTaskCardClick);
-    }
-
-    if (listViewButton && calendarViewButton) {
-      listViewButton.addEventListener('click', () => {
-        viewMode = 'list';
-        listViewButton.classList.add('is-active');
-        calendarViewButton.classList.remove('is-active');
-        render();
-      });
-
-      calendarViewButton.addEventListener('click', () => {
-        viewMode = 'calendar';
-        calendarViewButton.classList.add('is-active');
-        listViewButton.classList.remove('is-active');
-        render();
-      });
     }
 
     if (prevMonthButton) {
