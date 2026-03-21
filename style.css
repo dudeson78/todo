@@ -534,28 +534,32 @@ body {
   transform: translateY(-0.5px);
 }
 
-.time-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.form-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(99, 102, 241, 0.25);
+  background: rgba(15, 23, 42, 0.85);
+  color: var(--text-main);
+  font-size: 0.97rem;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.time-input-wrapper input[type='number'] {
-  width: 80px;
-  text-align: center;
-  -moz-appearance: textfield;
+.form-field select:focus {
+  border-color: rgba(129, 140, 248, 0.9);
+  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.8);
 }
 
-.time-input-wrapper input[type='number']::-webkit-outer-spin-button,
-.time-input-wrapper input[type='number']::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.time-suffix {
-  font-size: 0.95rem;
-  color: var(--text-muted);
-  white-space: nowrap;
+.form-field select option {
+  background: #1e293b;
+  color: var(--text-main);
 }
 
 .modal-footer {
