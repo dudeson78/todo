@@ -534,6 +534,30 @@ body {
   transform: translateY(-0.5px);
 }
 
+.time-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.time-input-wrapper input[type='number'] {
+  width: 80px;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.time-input-wrapper input[type='number']::-webkit-outer-spin-button,
+.time-input-wrapper input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.time-suffix {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .modal-footer {
   margin-top: 8px;
   display: flex;

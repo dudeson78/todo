@@ -115,6 +115,22 @@
             <input id="task-date" name="date" type="date" required />
           </div>
 
+          <div class="form-field">
+            <label for="task-time">시간</label>
+            <div class="time-input-wrapper">
+              <input
+                id="task-time"
+                name="time"
+                type="number"
+                min="0"
+                max="24"
+                placeholder="0~24"
+                required
+              />
+              <span class="time-suffix">시</span>
+            </div>
+          </div>
+
           <footer class="modal-footer">
             <button type="button" id="cancel-modal-button" class="secondary-button">
               취소
@@ -157,6 +173,21 @@
               <label for="edit-task-date">일자</label>
               <input id="edit-task-date" name="date" type="date" required />
             </div>
+            <div class="form-field">
+              <label for="edit-task-time">시간</label>
+              <div class="time-input-wrapper">
+                <input
+                  id="edit-task-time"
+                  name="time"
+                  type="number"
+                  min="0"
+                  max="24"
+                  placeholder="0~24"
+                  required
+                />
+                <span class="time-suffix">시</span>
+              </div>
+            </div>
             <div class="modal-footer">
               <button type="submit" class="primary-button">저장</button>
             </div>
@@ -176,6 +207,8 @@
       </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

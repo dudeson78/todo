@@ -1,9 +1,24 @@
 (() => {
-  /** @type {{ id: string; title: string; detail: string; date: string; completed?: boolean }[]} */
+  const firebaseConfig = {
+    apiKey: 'AIzaSyB5RxrLoDty37mno_gCREJkVI3CSRosZmA',
+    authDomain: 'todo-c7c07.firebaseapp.com',
+    databaseURL: 'https://todo-c7c07-default-rtdb.firebaseio.com',
+    projectId: 'todo-c7c07',
+    storageBucket: 'todo-c7c07.firebasestorage.app',
+    messagingSenderId: '119223033376',
+    appId: '1:119223033376:web:608cf7aca5c2c2fe726645',
+    measurementId: 'G-CY5VLWYK3E',
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const tasksRef = db.ref('tasks');
+
+  /** @type {{ id: string; title: string; detail: string; date: string; time: number; completed?: boolean }[]} */
   let tasks = [];
   let selectedDate = null;
   let viewMode = 'list'; // 'list' | 'calendar'
-  /** @type {{ id: string; title: string; detail: string; date: string; completed?: boolean } | null} */
+  /** @type {{ id: string; title: string; detail: string; date: string; time: number; completed?: boolean } | null} */
   let currentDetailTask = null;
 
   const todayLabelEl = document.getElementById('today-date-label');
@@ -23,6 +38,7 @@
   const titleInput = document.getElementById('task-title');
   const detailInput = document.getElementById('task-detail');
   const dateInput = document.getElementById('task-date');
+  const timeInput = document.getElementById('task-time');
   const filterDateInput = document.getElementById('filter-date-input');
 
   const detailOverlay = document.getElementById('task-detail-overlay');
@@ -37,6 +53,7 @@
   const editTitleInput = document.getElementById('edit-task-title');
   const editDetailInput = document.getElementById('edit-task-detail');
   const editDateInput = document.getElementById('edit-task-date');
+  const editTimeInput = document.getElementById('edit-task-time');
 
   function getTodayDateString() {
     return new Date().toISOString().slice(0, 10);
@@ -47,6 +64,17 @@
     const [year, month, day] = dateString.split('-').map(Number);
     if (!year || !month || !day) return dateString;
     return `${year}년 ${month}월 ${day}일`;
+  }
+
+  function formatKoreanDateTime(dateString, time) {
+    const datePart = formatKoreanDate(dateString);
+    if (!datePart) return '';
+    if (time === null || time === undefined || time === '') return datePart;
+    return `${datePart} ${Number(time)}시`;
+  }
+
+  function getCurrentHour() {
+    return new Date().getHours();
   }
 
   function shiftSelectedMonth(delta) {
@@ -68,12 +96,14 @@
     render();
   }
 
-  function loadTasks() {
-    return [];
-  }
-
-  function saveTasks() {
-    // 로컬 저장소를 사용하지 않음
+  function setupFirebaseListener() {
+    tasksRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      tasks = data
+        ? Object.entries(data).map(([key, val]) => ({ ...val, id: key }))
+        : [];
+      render();
+    });
   }
 
   function openModal() {
@@ -95,6 +125,7 @@
     if (titleInput) titleInput.value = '';
     if (detailInput) detailInput.value = '';
     if (dateInput) dateInput.value = getTodayDateString();
+    if (timeInput) timeInput.value = String(getCurrentHour());
   }
 
   function createTaskCard(task, isToday) {
@@ -127,7 +158,7 @@
 
     const dateChip = document.createElement('span');
     dateChip.className = 'task-date-chip';
-    dateChip.textContent = formatKoreanDate(task.date);
+    dateChip.textContent = formatKoreanDateTime(task.date, task.time);
 
     meta.appendChild(dateChip);
 
@@ -168,7 +199,7 @@
     if (!detailOverlay || !detailTitleEl || !detailDateEl || !detailBodyEl) return;
 
     currentDetailTask = task;
-    detailDateEl.textContent = formatKoreanDate(task.date);
+    detailDateEl.textContent = formatKoreanDateTime(task.date, task.time);
     detailTitleEl.textContent = task.title;
     detailBodyEl.textContent = task.detail || '상세 내용이 없습니다.';
 
@@ -193,6 +224,7 @@
     const title = editTitleInput.value.trim();
     const detail = (editDetailInput && editDetailInput.value.trim()) || '';
     const date = editDateInput.value;
+    const time = editTimeInput ? Number(editTimeInput.value) : 0;
 
     if (!title) {
       alert('제목을 입력해주세요.');
@@ -200,23 +232,29 @@
       return;
     }
 
+    if (editTimeInput && (isNaN(time) || time < 0 || time > 24)) {
+      alert('시간은 0~24 사이로 입력해주세요.');
+      editTimeInput.focus();
+      return;
+    }
+
     const task = tasks.find((t) => t.id === currentDetailTask.id);
     if (!task) return;
 
-    task.title = title;
-    task.detail = detail;
-    task.date = date;
-    currentDetailTask = task;
-
-    saveTasks();
-    render();
-
-    detailDateEl.textContent = formatKoreanDate(task.date);
-    detailTitleEl.textContent = task.title;
-    detailBodyEl.textContent = task.detail || '상세 내용이 없습니다.';
-
-    showDetailView();
-    updateToggleButtonText(task);
+    tasksRef
+      .child(task.id)
+      .update({ title, detail, date, time })
+      .then(() => {
+        currentDetailTask = { ...task, title, detail, date, time };
+        if (detailDateEl) detailDateEl.textContent = formatKoreanDateTime(date, time);
+        if (detailTitleEl) detailTitleEl.textContent = title;
+        if (detailBodyEl) detailBodyEl.textContent = detail || '상세 내용이 없습니다.';
+        showDetailView();
+        updateToggleButtonText(currentDetailTask);
+      })
+      .catch(() => {
+        alert('수정에 실패했습니다. 네트워크를 확인하고 다시 시도해주세요.');
+      });
   }
 
   function handleToggleComplete() {
@@ -225,12 +263,18 @@
     const task = tasks.find((t) => t.id === currentDetailTask.id);
     if (!task) return;
 
-    task.completed = !task.completed;
-    currentDetailTask = task;
+    const newCompleted = !task.completed;
 
-    saveTasks();
-    render();
-    updateToggleButtonText(task);
+    tasksRef
+      .child(task.id)
+      .update({ completed: newCompleted })
+      .then(() => {
+        currentDetailTask = { ...task, completed: newCompleted };
+        updateToggleButtonText(currentDetailTask);
+      })
+      .catch(() => {
+        alert('상태 변경에 실패했습니다. 네트워크를 확인하고 다시 시도해주세요.');
+      });
   }
 
   function render() {
@@ -265,8 +309,11 @@
     }
 
     const sorted = [...tasks].sort((a, b) => {
-      if (a.date === b.date) return a.id.localeCompare(b.id);
-      return a.date.localeCompare(b.date);
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      const aTime = a.time ?? 0;
+      const bTime = b.time ?? 0;
+      if (aTime !== bTime) return aTime - bTime;
+      return a.id.localeCompare(b.id);
     });
 
     const dailyTasks = sorted.filter((t) => t.date === currentDate);
@@ -415,12 +462,14 @@
     const titleField = form.elements.namedItem('title');
     const detailField = form.elements.namedItem('detail');
     const dateField = form.elements.namedItem('date');
+    const timeField = form.elements.namedItem('time');
 
     if (!titleField || !dateField) return;
 
     const title = titleField.value.trim();
     const detail = (detailField && detailField.value.trim()) || '';
     const date = dateField.value;
+    const time = timeField ? Number(timeField.value) : 0;
 
     if (!title) {
       alert('제목을 입력해주세요.');
@@ -434,19 +483,27 @@
       return;
     }
 
-    const newTask = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      title,
-      detail,
-      date,
-      completed: false,
-    };
+    if (timeField && (isNaN(time) || time < 0 || time > 24)) {
+      alert('시간은 0~24 사이로 입력해주세요.');
+      if (timeField.focus) timeField.focus();
+      return;
+    }
 
-    tasks.push(newTask);
-    saveTasks();
-    render();
-    clearForm();
-    closeModal();
+    const submitButton = taskForm.querySelector('[type="submit"]');
+    if (submitButton) submitButton.disabled = true;
+
+    tasksRef
+      .push({ title, detail, date, time, completed: false })
+      .then(() => {
+        clearForm();
+        closeModal();
+      })
+      .catch(() => {
+        alert('할 일 추가에 실패했습니다. 네트워크를 확인하고 다시 시도해주세요.');
+      })
+      .finally(() => {
+        if (submitButton) submitButton.disabled = false;
+      });
   }
 
   function setupEventListeners() {
@@ -551,6 +608,7 @@
         editTitleInput.value = currentDetailTask.title;
         if (editDetailInput) editDetailInput.value = currentDetailTask.detail || '';
         editDateInput.value = currentDetailTask.date;
+        if (editTimeInput) editTimeInput.value = String(currentDetailTask.time ?? 0);
         showDetailEditMode();
         setTimeout(() => editTitleInput.focus(), 20);
       });
@@ -614,13 +672,15 @@
     if (dateInput) {
       dateInput.value = today;
     }
+    if (timeInput) {
+      timeInput.value = String(getCurrentHour());
+    }
     if (filterDateInput) {
       filterDateInput.value = today;
     }
 
-    tasks = loadTasks();
     setupEventListeners();
-    render();
+    setupFirebaseListener();
   }
 
   if (document.readyState === 'loading') {
